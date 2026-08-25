@@ -1,0 +1,483 @@
+:root {
+  /* Sampled from public/brand/logo.png: #F6D21C is the tile field, so the
+     bar matches the logo edge-to-edge with no seam. --brand-ink is the
+     dark the logo draws its type in. */
+  --brand-gold: #F6D21C;
+  --brand-ink: #1A1208;
+  --nav-h: 72px;
+
+  --gold: #c8a24a;
+  --gold-bright: #e8c877;
+  --ink: #0d0f12;
+  --paper: #f4f1ea;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+
+#app { position: fixed; inset: 0; }
+
+#scene { display: block; width: 100%; height: 100%; cursor: grab; }
+#scene.grabbing { cursor: grabbing; }
+#scene.pointing { cursor: pointer; }
+
+/* ---------- Header ---------- */
+/* The gold spans the window, but its contents are held to a readable
+   measure and centred. Letting brand/links/crumb stretch edge to edge on a
+   wide monitor strands them in three far corners with a field of empty
+   gold between — the bar reads as wide and empty rather than composed. */
+#hud-top {
+  position: absolute; top: 0; left: 0; right: 0;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: auto;              /* solid bar: it is no longer see-through */
+  background: var(--brand-gold);
+  border-bottom: 1px solid rgba(26,18,8,.16);
+  height: var(--nav-h);
+  z-index: 10;
+}
+/* The row itself: brand, then links, then crumb, packed together rather
+   than pushed apart. */
+.nav-inner {
+  display: flex; align-items: center; gap: 34px;
+  width: 100%;
+  max-width: 1080px;
+  height: 100%;
+  padding: 0 26px;
+}
+.nav-inner .nav-links { margin-left: auto; }
+.nav-inner .crumb { margin-left: 34px; }
+
+/* Below ~1180px the three-column header crowds; drop the links and keep
+   the brand and crumb, which carry the essential information. */
+@media (max-width: 980px) {
+  .nav-links { gap: 18px; }
+  .nav-inner { padding: 0 18px; }
+}
+@media (max-width: 780px) {
+  .nav-links { display: none; }
+}
+/* ---------- Navbar brand ---------- */
+.nav-brand {
+  display: flex; align-items: center;
+  text-decoration: none;
+}
+
+
+/* The logo tile shares the bar's gold, so the two are meant to read as one
+   surface. The source is a compressed PNG whose outermost pixels sit a
+   shade darker than the flat field, which draws a faint rectangle around
+   it; the file is trimmed to remove that ring, and the last few pixels are
+   faded out so the tile dissolves into the bar instead of ending on a
+   hard edge. */
+.nav-logo {
+  display: block;
+  height: calc(var(--nav-h) - 10px);
+  width: auto;
+  object-fit: contain;
+  /* Feather the border: opaque through the middle, transparent at the very
+     edge. Both properties are needed — WebKit still wants the -webkit- one. */
+  -webkit-mask-image:
+    linear-gradient(to right,  transparent 0, #000 5%, #000 95%, transparent 100%),
+    linear-gradient(to bottom, transparent 0, #000 5%, #000 95%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right,  transparent 0, #000 5%, #000 95%, transparent 100%),
+    linear-gradient(to bottom, transparent 0, #000 5%, #000 95%, transparent 100%);
+  mask-composite: intersect;
+  /* The source is small; smoothing turns the fine type to mush on a
+     high-DPI screen, so keep the edges crisp. */
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* ---------- Navbar links ---------- */
+.nav-links {
+  display: flex; align-items: center; gap: 26px;
+  pointer-events: auto;
+}
+.nav-link {
+  position: relative;
+  font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
+  font-weight: 600;
+  color: rgba(26,18,8,.68);
+  text-decoration: none;
+  padding: 4px 0;
+  transition: color .2s;
+}
+.nav-link:hover { color: var(--brand-ink); }
+/* Underline grows from the centre rather than sliding in, so it reads the
+   same whichever direction the pointer arrives from. */
+.nav-link::after {
+  content: ''; position: absolute; left: 50%; right: 50%; bottom: 0;
+  height: 2px; background: var(--brand-ink);
+  transition: left .25s, right .25s;
+}
+.nav-link:hover::after,
+.nav-link.is-active::after { left: 0; right: 0; }
+.nav-link.is-active { color: var(--brand-ink); }
+.nav-link:focus-visible { outline: 2px solid var(--brand-ink); outline-offset: 3px; }
+.crumb {
+  font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
+  font-weight: 700;
+  white-space: nowrap;
+  color: rgba(26,18,8,.55);
+}
+
+/* ---------- Control + info panel ----------
+   Sits under the building name in the top-right. Only the controls take
+   pointer events, so the panel never blocks orbiting the model. */
+#panel {
+  position: absolute; top: calc(var(--nav-h) + 22px); right: 44px;
+  width: 268px;
+  display: flex; flex-direction: column; gap: 18px;
+  padding: 20px;
+  background: rgba(13,15,18,.72);
+  border: 1px solid rgba(200,162,74,.28);
+  border-radius: 3px;
+  backdrop-filter: blur(10px);
+  animation: rise 1.1s .5s cubic-bezier(.2,.7,.2,1) both;
+  max-height: calc(100vh - var(--nav-h) - 130px);
+  overflow-y: auto;
+}
+.panel-title {
+  font-size: 10px; letter-spacing: .24em; text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 12px;
+}
+
+/* Arrow pad: a 3-column cross with reset in the middle. */
+.pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  justify-items: center;
+}
+#ctl-up    { grid-column: 2; }
+#ctl-left  { grid-column: 1; grid-row: 2; }
+#ctl-reset { grid-column: 2; grid-row: 2; }
+#ctl-right { grid-column: 3; grid-row: 2; }
+#ctl-down  { grid-column: 2; grid-row: 3; }
+
+.ctl {
+  width: 40px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(244,241,234,.05);
+  border: 1px solid rgba(200,162,74,.3);
+  color: var(--gold-bright);
+  font-family: inherit; font-size: 12px; line-height: 1;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, transform .08s;
+}
+.ctl:hover  { background: rgba(200,162,74,.18); border-color: var(--gold); }
+.ctl:active { transform: scale(.93); }
+.ctl.wide   { width: 58px; }
+
+.zoom-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 12px;
+}
+.zoom-label {
+  font-size: 10px; letter-spacing: .2em; text-transform: uppercase;
+  color: rgba(244,241,234,.4);
+}
+
+/* Facts: label left, value right, hairline between rows. */
+.facts { display: flex; flex-direction: column; gap: 0; }
+.facts > div {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(244,241,234,.07);
+}
+.facts > div:last-child { border-bottom: 0; }
+.facts dt {
+  font-size: 11px; letter-spacing: .1em;
+  color: rgba(244,241,234,.5);
+}
+.facts dd {
+  font-size: 13px; font-weight: 600;
+  color: var(--paper);
+}
+.facts dd.ok { color: var(--gold-bright); }
+
+.panel-text {
+  font-size: 12px; line-height: 1.75;
+  color: rgba(244,241,234,.62);
+}
+
+/* ---------- Back button ---------- */
+#back-btn {
+  position: absolute; top: calc(var(--nav-h) + 18px); left: 44px;
+  padding: 11px 22px;
+  background: rgba(13,15,18,.7);
+  border: 1px solid rgba(200,162,74,.45);
+  color: var(--gold-bright);
+  font-family: inherit; font-size: 12px; letter-spacing: .12em;
+  text-transform: uppercase;
+  border-radius: 2px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background .2s, border-color .2s, opacity .35s, transform .35s;
+}
+#back-btn:hover { background: rgba(200,162,74,.16); border-color: var(--gold); }
+#back-btn.hidden { opacity: 0; transform: translateY(-8px); pointer-events: none; }
+
+/* ---------- Hint ---------- */
+#hint {
+  position: absolute; bottom: 34px; left: 50%; transform: translateX(-50%);
+  font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+  color: rgba(244,241,234,.38);
+  pointer-events: none;
+  transition: opacity .5s;
+}
+#hint.fade { opacity: 0; }
+
+/* ---------- Tooltip ---------- */
+#tooltip {
+  position: absolute; pointer-events: none;
+  padding: 7px 13px;
+  background: rgba(13,15,18,.9);
+  border: 1px solid rgba(200,162,74,.5);
+  color: var(--gold-bright);
+  font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+  border-radius: 2px;
+  opacity: 0; transform: translate(-50%, -160%);
+  transition: opacity .18s;
+  white-space: nowrap;
+  backdrop-filter: blur(6px);
+}
+#tooltip.show { opacity: 1; }
+
+/* ---------- Loader ---------- */
+#loader {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 18px;
+  background: var(--ink);
+  z-index: 20;
+  transition: opacity .6s;
+}
+#loader.done { opacity: 0; pointer-events: none; }
+.bar { width: 220px; height: 1px; background: rgba(244,241,234,.15); overflow: hidden; }
+.bar-fill { height: 100%; width: 0%; background: var(--gold); transition: width .3s; }
+.loader-label {
+  font-size: 11px; letter-spacing: .28em; text-transform: uppercase;
+  color: rgba(244,241,234,.45);
+}
+
+/* ---------- Desktop-only gate ---------- */
+#mobile-block { display: none; }
+@media (max-width: 900px), (pointer: coarse) and (max-width: 1100px) {
+  #app { display: none; }
+  #mobile-block {
+    display: flex; position: fixed; inset: 0;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 40px;
+    background: var(--ink);
+  }
+  #mobile-block h1 {
+    font-size: 20px; font-weight: 600; letter-spacing: .2em;
+    text-transform: uppercase; color: var(--gold); margin-bottom: 10px;
+  }
+  #mobile-block h2 {
+    font-size: 13px; font-weight: 500; letter-spacing: .18em;
+    text-transform: uppercase; color: rgba(244,241,234,.7); margin-bottom: 14px;
+  }
+  #mobile-block p {
+    font-size: 14px; line-height: 1.7; color: rgba(244,241,234,.55);
+    max-width: 340px;
+  }
+}
+
+/* Used by the info panel's entrance. */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ---------- Loader brand ---------- */
+.loader-brand {
+  font-size: 16px; font-weight: 600; letter-spacing: .26em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+/* ---------- Apartment tour ----------
+   The container always carries an explicit height, set inline by
+   mountApartmentTour. height:100% here would collapse to zero, since the
+   iframe has no intrinsic size to push against. */
+.tour {
+  position: relative;
+  width: 100%;
+  background: var(--ink);
+  border: 1px solid rgba(200,162,74,.28);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.tour-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  opacity: 0;
+  transition: opacity .45s;
+}
+.tour.is-loaded .tour-frame { opacity: 1; }
+
+/* Loading and failure share one centred column. */
+.tour-state {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 14px;
+  padding: 32px;
+  text-align: center;
+}
+.tour-state-title {
+  font-size: 13px; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--gold);
+}
+.tour-state-text {
+  font-size: 13px; line-height: 1.7;
+  color: rgba(244,241,234,.62);
+  max-width: 360px;
+}
+
+.tour-spinner {
+  width: 26px; height: 26px;
+  border: 1px solid rgba(200,162,74,.25);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: tour-spin .9s linear infinite;
+}
+@keyframes tour-spin { to { transform: rotate(360deg); } }
+
+.tour-link {
+  padding: 10px 20px;
+  border: 1px solid rgba(200,162,74,.45);
+  color: var(--gold-bright);
+  font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+  text-decoration: none;
+  border-radius: 2px;
+  transition: background .2s, border-color .2s;
+}
+.tour-link:hover { background: rgba(200,162,74,.16); border-color: var(--gold); }
+
+/* ---------- Tour overlay ---------- */
+.tour-overlay {
+  position: fixed; inset: 0;
+  z-index: 30;
+  display: flex; flex-direction: column;
+  background: var(--ink);
+  animation: rise .5s cubic-bezier(.2,.7,.2,1) both;
+}
+.tour-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 44px;
+  border-bottom: 1px solid rgba(200,162,74,.2);
+  flex: 0 0 auto;
+}
+.tour-title {
+  font-size: 13px; letter-spacing: .2em; text-transform: uppercase;
+  font-weight: 600;
+  color: var(--gold);
+}
+.tour-close {
+  padding: 9px 18px;
+  background: rgba(13,15,18,.7);
+  border: 1px solid rgba(200,162,74,.45);
+  color: var(--gold-bright);
+  font-family: inherit; font-size: 11px; letter-spacing: .12em;
+  text-transform: uppercase;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background .2s, border-color .2s;
+}
+.tour-close:hover { background: rgba(200,162,74,.16); border-color: var(--gold); }
+
+/* The stage is the flex remainder, and the .tour inside it is set to
+   height:100% by the caller — which resolves here because the stage has a
+   definite height of its own. */
+.tour-stage { flex: 1 1 auto; min-height: 0; padding: 22px 44px 34px; }
+.tour-stage .tour { border-radius: 3px; }
+
+/* ---------- Tour panel button ---------- */
+.tour-btn {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(200,162,74,.1);
+  border: 1px solid rgba(200,162,74,.45);
+  color: var(--gold-bright);
+  font-family: inherit; font-size: 11px; letter-spacing: .14em;
+  text-transform: uppercase;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background .2s, border-color .2s, transform .08s;
+}
+.tour-btn:hover:not(:disabled) { background: rgba(200,162,74,.2); border-color: var(--gold); }
+.tour-btn:active:not(:disabled) { transform: scale(.98); }
+.tour-btn:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+  border-color: rgba(244,241,234,.15);
+  color: rgba(244,241,234,.5);
+}
+.tour-note {
+  margin-top: 9px;
+  font-size: 11px; line-height: 1.6;
+  color: rgba(244,241,234,.45);
+}
+
+/* Mobile. The desktop-only gate currently hides #app below 900px, so these
+   rules only take effect if that gate is lifted — the overlay is fixed to
+   the viewport and sits outside #app, so it is styled for it regardless. */
+@media (max-width: 768px) {
+  .tour-bar { padding: 14px 18px; }
+  .tour-stage { padding: 14px 18px 20px; }
+  .tour {
+    width: 100%;
+    /* !important because mountApartmentTour writes height as an inline
+       style, which otherwise outranks this rule. */
+    height: 70vh !important;
+  }
+}
+
+/* Offscreen warm-up host.
+
+   The Coohom viewer keeps loading after its page arrives — WebGL modules,
+   then the model and textures — and browsers throttle or skip that work for
+   frames they consider invisible. So this is hidden the one way that still
+   renders: parked outside the viewport at full size and full opacity.
+
+   display:none, visibility:hidden and opacity:0 would each stall the very
+   stage the preload exists to get through. clip-path keeps it from painting
+   over anything if the offset is ever defeated, without touching rendering
+   inside the frame. */
+.tour-preload {
+  position: fixed;
+  left: -12000px;
+  top: 0;
+  width: 1280px;
+  height: 800px;
+  pointer-events: none;
+  z-index: -1;
+  clip-path: inset(50%);
+}
+
+/* If the logo file is missing the <img> collapses to an empty box, so a
+   text lockup stands in until it is added. */
+.nav-fallback { display: none; }
+.nav-brand.no-logo .nav-logo { display: none; }
+.nav-brand.no-logo .nav-fallback {
+  display: block;
+  padding-left: 32px;
+  font-size: 15px; font-weight: 800; letter-spacing: .2em;
+  color: var(--brand-ink);
+}

@@ -1,0 +1,6 @@
+[ 2250275ms] [ERROR] Failed to load /models/GoldenHands3d_Building.glb ReferenceError: groundPlane is not defined
+    at frame (http://localhost:5174/src/main.js?t=1787060084452:248:3)
+    at goTo (http://localhost:5174/src/main.js?t=1787060084452:291:5) @ http://localhost:5174/src/main.js?t=1787060084452:302
+[ 2250275ms] [ERROR] Failed to load /models/GoldenHands3d_Building.glb ReferenceError: groundPlane is not defined
+    at frame (http://localhost:5174/src/main.js?t=1787060084452:248:3)
+    at goTo (http://localhost:5174/src/main.js?t=1787060084452:291:5) @ http://localhost:5174/src/main.js?t=1787060084452:302

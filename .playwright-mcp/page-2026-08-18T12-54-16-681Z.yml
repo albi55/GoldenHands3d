@@ -1,0 +1,12 @@
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - generic [ref=e5]: GoldenHands Construction
+    - generic [ref=e8]: Loading Building
+  - banner:
+    - generic: GoldenHands Construction
+    - generic: Building
+  - generic:
+    - heading "GoldenHands Construction" [level=1]
+    - paragraph: Built by hand. Rendered in three dimensions.
+  - button "← Back to building"
+  - generic: Drag to orbit · Scroll to zoom
