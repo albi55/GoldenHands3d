@@ -18,15 +18,26 @@ import { motion } from 'framer-motion';
  * the same tour in a real tab, where it has the whole GPU to itself.
  */
 
-/* How long before offering the way out, in ms. Long enough that a normal
-   boot on a slow connection never sees it. */
-const SLOW = 14000;
+/* Sa mbahet perdja jonë, në ms.
+
+   Korniza njofton kur dokumenti i saj ngarkohet, por Coohom-i vetëm atëherë
+   fillon të ndërtojë skenën 3D dhe shfaq perden e vet. Nëse hiqemi te
+   njoftimi, vizitori sheh dy ngarkime radhazi — tonën, pastaj të tyren.
+
+   Meqë korniza është nga një origjinë tjetër, s'kemi si ta pyesim kur
+   është gati vërtet. Ndaj perdja jonë mbahet një kohë të caktuar, e cila
+   mbulon edhe ngarkimin e tyre, dhe zbulohet vetëm kur skena është aty. */
+const HOLD = 9000;
+
+/* Kur ofrohet dalja, nëse edhe pas kësaj nuk ka nisur. */
+const SLOW = 16000;
 
 /* Cycled under the spinner so a long wait still feels like progress. */
 const BEATS = UI.tourBeats;
 
 export default function TourOverlay({ tour, onClose }) {
-  const [loaded, setLoaded] = useState(false);
+  const [done, setDone] = useState(false);
+  const [pct, setPct] = useState(0);
   const [slow, setSlow] = useState(false);
   const [beat, setBeat] = useState(0);
   const timers = useRef([]);
@@ -42,6 +53,19 @@ export default function TourOverlay({ tour, onClose }) {
 
     timers.current.push(setInterval(() => setBeat((b) => b + 1), 2600));
     timers.current.push(setTimeout(() => setSlow(true), SLOW));
+
+    /* Shiriti mbushet gjatë gjithë kohës së mbajtjes, që pritja të duket
+       e menduar dhe jo e ngecur. */
+    const t0 = performance.now();
+    const tick = setInterval(() => {
+      const p = Math.min(100, ((performance.now() - t0) / HOLD) * 100);
+      setPct(p);
+      if (p >= 100) {
+        clearInterval(tick);
+        setDone(true);
+      }
+    }, 80);
+    timers.current.push(tick);
 
     return () => {
       document.body.style.overflow = prev;
@@ -79,10 +103,10 @@ export default function TourOverlay({ tour, onClose }) {
           title={tour.label}
           allow="fullscreen; xr-spatial-tracking; gyroscope; accelerometer"
           allowFullScreen
-          onLoad={() => setLoaded(true)}
+
         />
 
-        {!loaded && (
+        {!done && (
           <div className="tour-curtain">
             <div className="tour-ring" aria-hidden>
               <span>360°</span>
@@ -90,6 +114,16 @@ export default function TourOverlay({ tour, onClose }) {
             <p className="tour-beat" aria-live="polite">
               {BEATS[beat % BEATS.length]}
             </p>
+            <div
+              className="tour-bar"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(pct)}
+              aria-label={UI.tourOpen}
+            >
+              <span className="tour-bar-fill" style={{ width: pct + '%' }} />
+            </div>
           </div>
         )}
 

@@ -46,9 +46,20 @@ function Words({ text }) {
     <span aria-label={text}>
       {words.map((w, i) => (
         <Fragment key={w + i}>
+          {/* Kutia që pret fjalën gjatë animacionit duhet të jetë më e
+              lartë se rreshti, ndryshe pret pjesët që dalin jashtë tij:
+              bishtat e g, j, p, y dhe dy pikat e ë-së. Hapësira shtohet
+              me padding dhe hiqet me margin, pra prerja zgjerohet pa e
+              lëvizur fare tekstin. */}
           <span
             aria-hidden
-            style={{ display: 'inline-block', overflow: 'hidden', verticalAlign: 'bottom' }}
+            style={{
+              display: 'inline-block',
+              overflow: 'hidden',
+              verticalAlign: 'bottom',
+              padding: '0.18em 0 0.22em',
+              margin: '-0.18em 0 -0.22em',
+            }}
           >
             <motion.span style={{ display: 'inline-block' }} variants={wordRise}>
               {w}

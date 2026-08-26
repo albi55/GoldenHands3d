@@ -289,7 +289,7 @@ button {
    far better than the 54px it started at. A 256px export would make this
    sharp at any size and is the only real fix. */
 .nav-logo {
-  height: 52px;
+  height: 64px;
   width: auto;
   display: block;
   /* The source is a compressed PNG whose outermost pixels sit a shade
@@ -1156,6 +1156,22 @@ button {
   to { transform: rotate(360deg); }
 }
 
+/* Shiriti i përparimit të perdes sonë. Mbushet gjatë gjithë kohës që
+   mbahet, pra pritja lexohet si ecuri dhe jo si ngecje. */
+.tour-bar {
+  width: min(280px, 60vw);
+  height: 2px;
+  background: rgba(244, 241, 234, 0.14);
+  overflow: hidden;
+  border-radius: 2px;
+}
+.tour-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--brand-gold);
+  transition: width 0.12s linear;
+}
+
 .tour-beat {
   font-size: 13px;
   letter-spacing: 0.06em;
@@ -1218,8 +1234,18 @@ button {
 .contact-panel {
   background: #07080a;
   pointer-events: auto;
+  /* Shiriti fshihet, rrëshqitja mbetet. Përmbajtja e formularit është më
+     e gjatë se ekrani, ndaj fshehja e vetë rrëshqitjes do ta bënte të
+     paarritshme; kështu rrota, prekja dhe tastiera punojnë si më parë,
+     thjesht pa shiritin e dukshëm mbi panelin e errët. */
   overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   border-left: 1px solid rgba(246, 210, 28, 0.22);
+}
+
+.contact-panel::-webkit-scrollbar {
+  display: none;
 }
 
 /* Dy kolona: teksti majtas, harta djathtas.
@@ -1247,7 +1273,7 @@ button {
   align-items: flex-start;
   justify-content: center;
   gap: 0;
-  padding: clamp(48px, 8vh, 96px) clamp(24px, 3.4vw, 60px);
+  padding: clamp(24px, 3.6vh, 48px) clamp(24px, 3.4vw, 60px);
   max-width: 780px;
 }
 
@@ -1367,6 +1393,9 @@ button {
 
 .contact-close {
   position: absolute;
+  /* Mbi kolonën e hartës: ajo është sticky dhe vjen pas këtij butoni në
+     DOM, ndaj pa këtë rri sipër tij dhe i merr klikimet. */
+  z-index: 3;
   top: 24px;
   right: clamp(24px, 5vw, 56px);
   font-size: 11px;
@@ -1389,8 +1418,8 @@ button {
 }
 .contact-title {
   font-family: var(--font-display);
-  font-size: clamp(40px, 7vw, 82px);
-  line-height: 1.02;
+  font-size: clamp(34px, 4.4vw, 58px);
+  line-height: 1.05;
   letter-spacing: -0.025em;
   margin-bottom: 20px;
 }
@@ -1399,20 +1428,20 @@ button {
   line-height: 1.6;
   color: var(--muted);
   max-width: 46ch;
-  margin-bottom: 40px;
+  margin-bottom: 24px;
 }
 
 .contact-rows {
   width: 100%;
   border-top: 1px solid var(--hair);
-  margin-bottom: 36px;
+  margin-bottom: 22px;
 }
 .contact-row {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 6px 28px;
-  padding: 18px 0;
+  padding: 13px 0;
   border-bottom: 1px solid var(--hair);
 }
 .contact-row dt {
@@ -1443,8 +1472,8 @@ button {
    janë të njohura pikërisht nga ngjyra, dhe ari do t'i bënte të
    panjohshme. */
 .contact-chat {
-  margin-top: 34px;
-  padding-top: 26px;
+  margin-top: 22px;
+  padding-top: 18px;
   border-top: 1px solid var(--hair);
   width: 100%;
 }
@@ -1492,7 +1521,7 @@ button {
   color: #04283c;
 }
 .contact-foot {
-  margin-top: 40px;
+  margin-top: 22px;
   font-size: 10.5px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -1630,7 +1659,7 @@ button {
   max-width: 520px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 13px;
   margin-bottom: 8px;
 }
 .field {
@@ -1652,13 +1681,13 @@ button {
   background: rgba(244, 241, 234, 0.04);
   border: 1px solid var(--hair);
   border-radius: 2px;
-  padding: 12px 14px;
+  padding: 10px 13px;
   width: 100%;
   transition: border-color 0.2s var(--ease), background 0.2s var(--ease);
 }
 .field textarea {
   resize: vertical;
-  min-height: 110px;
+  min-height: 84px;
 }
 .field input:hover,
 .field textarea:hover {
