@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import ContactForm from './ContactForm';
+import ContactMap from './ContactMap';
 import { BUILDING, CONTACT, UI } from '../content/chapters';
 
 /**
@@ -83,6 +84,7 @@ export default function ContactOverlay({ onClose }) {
       <motion.div className="contact-sweep" variants={sheet} aria-hidden />
 
       <motion.div className="contact-panel" variants={panel}>
+        <div className="contact-cols">
         <motion.div className="contact-inner" variants={list}>
           <motion.button
             className="contact-close"
@@ -163,6 +165,9 @@ export default function ContactOverlay({ onClose }) {
             {BUILDING.name} · {UI.completion} {BUILDING.year}
           </motion.p>
         </motion.div>
+
+        <ContactMap />
+        </div>
       </motion.div>
     </motion.div>
   );

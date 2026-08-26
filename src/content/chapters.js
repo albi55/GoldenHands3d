@@ -414,6 +414,30 @@ export const CONTACT = {
    */
   whatsapp: '',
   telegram: '',
+
+  /**
+   * Harta te mbivendosja e kontaktit.
+   *
+   * Vendos koordinatat e ndërtesës. Merri kështu: hap Google Maps, kliko
+   * me të djathtën mbi vendin e saktë, dhe numrat që dalin lart janë
+   * gjerësia dhe gjatësia — p.sh. 41.3275, 19.8187.
+   *
+   * Përdoret OpenStreetMap, që nuk kërkon çelës API dhe nuk vendos
+   * cookies gjurmuese si Google Maps — pra nuk shton detyrime te
+   * politika e privatësisë.
+   *
+   * ⚠ Pa koordinata nuk shfaqet hartë, por një pamje e ndërtesës, që
+   * hapësira të mos mbetet bosh. NUK vendos koordinata me hamendje:
+   * një pin i gabuar dërgon një klient në vendin e gabuar.
+   */
+  map: {
+    /* Marrë nga pika e vendit te lidhja e Google Maps: !3d…!4d… */
+    lat: '41.3525169',
+    lon: '19.807812',
+    zoom: 17,
+    /* Teksti nën hartë. Bosh = nuk shfaqet. */
+    address: 'Paskuqan, Tiranë',
+  },
 };
 
 /** Every fixed string in the interface, so the wording lives in one file. */
@@ -450,6 +474,9 @@ export const UI = {
   contactHours: 'Orari',
   contactWrite: 'Na shkruani',
   contactChat: 'Ose na shkruani drejtpërdrejt',
+  contactWhere: 'Vendndodhja',
+  contactMapLink: 'Hape në hartë',
+  contactNoMap: 'Ndërtesa Golden Hands 4',
 
   /* Contact form */
   formName: 'Emri',
