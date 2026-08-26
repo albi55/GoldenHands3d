@@ -1,3 +1,14 @@
 node_modules
 dist
 *.blend1
+
+# Fotot e verifikimit nga scripts/shots.mjs — dalin sa herë ekzekutohet.
+.shots/
+
+# Regjistrat e vjetër të korrigjimit.
+.playwright-mcp/
+
+# Kopje pune: modeli i pakompresuar (9.3 MB) dhe shfletuesi i vjetër
+# vanilla-JS. Të dyja ndodhen në historik te commit-i 494f926, ndaj s'ka
+# pse t'i mbajë repo-ja dy herë.
+.attic/

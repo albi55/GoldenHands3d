@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Golden Hands">
+  <!-- Authored rather than scaled from logo.png: that file is 90x90 and
+       turns to mush at 16px. Vector stays crisp at every size, and the
+       monogram survives the shrink where the full wordmark would not. -->
+  <rect width="64" height="64" rx="10" fill="#F6D21C"/>
+  <text x="32" y="44" text-anchor="middle"
+        font-family="Georgia, 'Times New Roman', serif" font-weight="700"
+        font-size="34" fill="#1A1208" letter-spacing="-1">GH</text>
+</svg>

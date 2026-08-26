@@ -1,0 +1,1842 @@
+/* =========================================================================
+   Golden Hands 4 — theme
+   -------------------------------------------------------------------------
+   Three colours carry the whole site:
+
+     gold    #F6D21C  sampled from the logo tile. Brand, and nothing else —
+                      it marks the things that are Golden Hands, never
+                      ordinary body text.
+     ink     #0A0B0D  a near-black with a blue cast rather than a warm one,
+                      so the gold reads as warm against it.
+     paper   #F4F1EA  off-white for reading. Pure white is reserved for the
+                      building itself, which is the brightest thing on the
+                      page by design.
+
+   The model renders white on a dark field, so the page is dark for the
+   same reason a gallery wall is: it is the surface the subject sits on,
+   not a thing to look at.
+   ========================================================================= */
+
+:root {
+  /* The brand pair, straight off the logo tile: #F6D21C is its field and
+     #1A1208 is the dark its type is drawn in. The navbar uses these two
+     and nothing else, so the bar and the logo are one surface. */
+  --brand-gold: #f6d21c;
+  --brand-ink: #1a1208;
+
+  --gold: #f6d21c;
+  --gold-soft: #e8c877;
+  --gold-deep: #c8a24a;
+  --gold-dim: rgba(246, 210, 28, 0.16);
+
+  --ink: #0a0b0d;
+  --ink-2: #101216;
+  --ink-3: #171a20;
+
+  --paper: #f4f1ea;
+  /* Both text greys clear 4.5:1 against --ink, checked rather than eyeballed.
+     --faint was 0.34, which computes to 2.8:1 — it failed AA on exactly the
+     small uppercase labels it was used for. 0.52 is the point where it
+     passes; anything lower is decoration, not text. */
+  --muted: rgba(244, 241, 234, 0.68);
+  --faint: rgba(244, 241, 234, 0.52);
+  --hair: rgba(244, 241, 234, 0.12);
+
+  --nav-h: 68px;
+  --measure: 44ch;
+
+  --font-display: "Playfair Display", "Georgia", serif;
+  --font-ui: "Inter", "Segoe UI", system-ui, sans-serif;
+
+  /* Long, soft easing — everything on this page decelerates. */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--gold);
+  color: var(--ink);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* One visible focus ring for everything focusable. Without a global rule
+   the keyboard path through the page is invisible on most of it — and
+   :focus-visible means a mouse click never shows it. */
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Lets a keyboard or screen-reader user skip the 14 chapters and reach
+   the contact section. Off-screen until focused. */
+.skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  background: var(--brand-gold);
+  color: var(--brand-ink);
+  padding: 12px 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.skip:focus {
+  left: 0;
+}
+
+/* The page is a 3D model, so without JavaScript there is nothing at all
+   to see. This is the only thing a crawler without JS or a visitor with
+   it disabled would otherwise get. */
+.noscript {
+  max-width: 60ch;
+  margin: 0 auto;
+  padding: 18vh 24px;
+  text-align: center;
+}
+.noscript h1 {
+  font-family: var(--font-display);
+  font-size: 40px;
+  margin-bottom: 16px;
+}
+.noscript p {
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.noscript a {
+  color: var(--gold);
+}
+
+/* =========================================================================
+   The stage — a fixed backdrop, the canvas, and a vignette, in that order.
+   All three sit behind the scrolling text and none of them take clicks
+   except the canvas, which needs them for the drag-to-look.
+   ========================================================================= */
+
+.stage {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+/* Static base. Nothing here changes, so it rasterises once and is never
+   touched again. */
+.stage-backdrop {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #0c0e12 0%, #0a0b0d 45%, #07080a 100%);
+}
+
+/* The light in the room, and the one thing on the stage that moves with
+   the chapter.
+
+   It used to be a gradient on the backdrop whose colour stops the scroll
+   handler rewrote. Browsers do not interpolate gradients, so that never
+   animated — it snapped, and repainted a full-viewport layer to do it.
+   Here it is one gold gradient on its own layer that only ever gets
+   translated, which the compositor handles without repainting anything. */
+.stage-glow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  /* 130vmax was a 2500px-square layer on a 1080p screen — about 25 MB of
+     GPU memory held permanently by `will-change`, for a soft gradient.
+     This is sized to cover the viewport at any offset it actually uses,
+     and left to promote itself for the duration of each transition. */
+  width: 96vmax;
+  height: 96vmax;
+  margin: -48vmax 0 0 -48vmax;
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side,
+    rgba(246, 210, 28, 0.13),
+    rgba(246, 210, 28, 0.04) 45%,
+    rgba(246, 210, 28, 0) 72%
+  );
+  transform: translate3d(var(--gx, 8%), var(--gy, -26%), 0);
+  transition: transform 1.5s var(--ease);
+}
+
+.stage-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+}
+.stage-canvas.is-grabbing {
+  cursor: grabbing;
+}
+
+/* Darkens the corners so the text panels always have something to sit on,
+   whatever the camera is pointing at. */
+.stage-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(85% 70% at 50% 50%, rgba(10, 11, 13, 0) 45%, rgba(7, 8, 10, 0.82) 100%),
+    linear-gradient(90deg, rgba(7, 8, 10, 0.72) 0%, rgba(7, 8, 10, 0) 34%, rgba(7, 8, 10, 0) 66%, rgba(7, 8, 10, 0.72) 100%);
+}
+
+/* A faint grain. Flat dark gradients band badly on cheap panels and this
+   hides it.
+
+   It is static. Animating it meant a layer four times the viewport being
+   recomposited forever to produce an effect nobody consciously sees — on
+   a phone that alone was costing frames. Desktop only, for the same
+   reason: a phone screen is dense enough that the banding it fixes is not
+   visible in the first place. */
+.stage-grain {
+  display: none;
+}
+@media (min-width: 901px) {
+  .stage-grain {
+    display: block;
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+}
+
+/* =========================================================================
+   Navigation
+   ========================================================================= */
+
+/* The solid gold bar, edge to edge.
+   The logo tile is the same #F6D21C, so the two read as one surface — a
+   translucent or dark bar breaks that, which is why there is no scrolled
+   variant that changes the colour. Scrolling only adds a shadow. */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  height: var(--nav-h);
+  /* 1fr auto 1fr: lidhjet mbeten të centruara si më parë, kurse logoja
+     dhe butoni shtyhen te skajet e brendshme të kolonave anësore. */
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  column-gap: clamp(20px, 4vw, 60px);
+  padding: 0 clamp(14px, 4vw, 44px);
+  background: var(--brand-gold);
+  border-bottom: 1px solid rgba(26, 18, 8, 0.16);
+  /* No backdrop-filter. Blurring a live WebGL canvas underneath meant
+     re-reading the framebuffer every single frame the camera moved. */
+  transition: box-shadow 0.4s var(--ease);
+}
+.nav.is-stuck {
+  box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.55);
+}
+
+/* Tri kolona, jo pozicionim absolut.
+
+   Me `left: 30%` logoja binte mbi lidhjet sapo dritarja ngushtohej — në
+   1280px ato mbivendoseshin. Rrjeta e bën përplasjen të pamundur: lidhjet
+   qëndrojnë në kolonën e mesme, pra në qendër ashtu si më parë, logoja
+   shtyhet në fund të kolonës së parë (pra afër mesit) dhe `column-gap`
+   garanton hapësirën mes tyre. */
+.nav-spacer {
+  display: none;
+}
+.nav-brand {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+/* Enlarged as asked. Worth knowing what it costs: the source PNG is
+   90x90, so at 52px a 2x screen wants 104px and the browser is scaling it
+   up about 1.16x. That is mild — noticeably softer than 32px was, still
+   far better than the 54px it started at. A 256px export would make this
+   sharp at any size and is the only real fix. */
+.nav-logo {
+  height: 52px;
+  width: auto;
+  display: block;
+  /* The source is a compressed PNG whose outermost pixels sit a shade
+     darker than the flat gold field, which draws a faint rectangle around
+     it. Feathering the edge dissolves the tile into the bar. Both
+     properties are needed — WebKit still wants the prefixed one. */
+  -webkit-mask-image:
+    linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%),
+    linear-gradient(to bottom, transparent 0, #000 6%, #000 94%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%),
+    linear-gradient(to bottom, transparent 0, #000 6%, #000 94%, transparent 100%);
+  mask-composite: intersect;
+  /* The source is small; smoothing turns the fine type to mush on a
+     high-DPI screen, so keep the edges crisp. */
+  image-rendering: -webkit-optimize-contrast;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 2.4vw, 30px);
+}
+.nav-link {
+  position: relative;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(26, 18, 8, 0.66);
+  padding: 6px 0;
+  transition: color 0.25s var(--ease);
+}
+.nav-link:hover,
+.nav-link.is-active {
+  color: var(--brand-ink);
+}
+/* Grows from the centre, so it reads the same whichever way the pointer
+   arrives from. */
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  right: 50%;
+  bottom: 0;
+  height: 2px;
+  background: var(--brand-ink);
+  transition: left 0.3s var(--ease), right 0.3s var(--ease);
+}
+.nav-link:hover::after,
+.nav-link.is-active::after {
+  left: 0;
+  right: 0;
+}
+.nav-link:focus-visible,
+.nav-cta:focus-visible {
+  outline: 2px solid var(--brand-ink);
+  outline-offset: 3px;
+}
+
+/* Ink on gold: the one element that has to stand off the bar rather than
+   sit in it. */
+.nav-cta {
+  justify-self: end;
+  flex: none;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brand-gold);
+  background: var(--brand-ink);
+  padding: 10px 18px;
+  border-radius: 2px;
+  transition: transform 0.25s var(--ease), background 0.25s var(--ease);
+}
+.nav-cta:hover {
+  transform: translateY(-1px);
+  background: #2c2010;
+}
+
+/* =========================================================================
+   Chapter rail — the vertical progress index on the right edge
+   ========================================================================= */
+
+.rail {
+  position: fixed;
+  right: clamp(14px, 2.2vw, 30px);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 35;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-end;
+}
+.rail-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 0;
+  opacity: 0.62;
+  transition: opacity 0.4s var(--ease);
+}
+.rail-item:hover,
+.rail-item.is-active {
+  opacity: 1;
+}
+.rail-label {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--paper);
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(6px);
+  transition: opacity 0.35s var(--ease), transform 0.35s var(--ease);
+}
+.rail-item:hover .rail-label,
+.rail-item.is-active .rail-label {
+  opacity: 1;
+  transform: none;
+}
+.rail-item.is-active .rail-label {
+  color: var(--gold);
+}
+/* The tick grows into a bar on the active chapter — the rail doubles as a
+   position readout without needing a separate progress element. */
+.rail-tick {
+  width: 16px;
+  height: 1px;
+  background: var(--paper);
+  transition: width 0.45s var(--ease), background 0.45s var(--ease);
+}
+.rail-item.is-active .rail-tick {
+  width: 34px;
+  background: var(--gold);
+}
+
+/* =========================================================================
+   Chapters
+   -------------------------------------------------------------------------
+   Each section is taller than the viewport and holds a sticky panel. The
+   extra height is the scroll distance the camera uses to travel to the
+   next pose, so reading time and camera time are the same thing.
+   ========================================================================= */
+
+/* The scroll column sits over the canvas, so by default none of it takes
+   pointer events — a section box is still a hit target even with nothing
+   painted in it, and it would swallow every drag meant for the camera.
+   Only the things a visitor actually clicks opt back in. */
+.scroll-root {
+  position: relative;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.chapter {
+  position: relative;
+  height: 118vh;
+  pointer-events: none;
+  /* The height is explicit, so the browser can skip the style, layout and
+     paint of every chapter that is off screen without the page geometry
+     shifting — which matters when eight of the ten always are. Safe here
+     only because of that fixed height; the mobile rules below drop back
+     to auto height and turn this off with it. */
+  content-visibility: auto;
+}
+.chapter-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: var(--nav-h) clamp(18px, 5vw, 76px) 0;
+  pointer-events: none;
+}
+.chapter.side-left .chapter-sticky {
+  justify-content: flex-start;
+}
+.chapter.side-right .chapter-sticky {
+  justify-content: space-between;
+}
+
+/* opacity and transform are written straight onto this element by
+   useStageScroll on every frame it is on screen. They start at their
+   resting values so the page is readable if that never runs. */
+.panel {
+  position: relative;
+  width: min(var(--measure), 100%);
+  pointer-events: auto;
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+/* The oversized ghost numeral behind each chapter. It parallaxes against
+   the text, which is most of what sells the depth between the panel and
+   the model behind it. */
+.panel-ghost {
+  position: absolute;
+  top: -0.36em;
+  left: -0.08em;
+  font-family: var(--font-display);
+  font-size: clamp(150px, 22vw, 300px);
+  line-height: 1;
+  font-weight: 700;
+  color: rgba(244, 241, 234, 0.04);
+  pointer-events: none;
+  user-select: none;
+  z-index: -1;
+}
+
+.panel-kicker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 20px;
+}
+/* Drawn on entry rather than faded, so the chapter opens with a gesture. */
+.panel-kicker::after {
+  content: "";
+  height: 1px;
+  width: 54px;
+  background: linear-gradient(90deg, var(--gold), transparent);
+}
+
+.panel-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(38px, 5.4vw, 74px);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  margin-bottom: 22px;
+}
+
+.panel-lead {
+  font-size: clamp(17px, 1.35vw, 20px);
+  line-height: 1.6;
+  color: var(--paper);
+  margin-bottom: 20px;
+}
+
+.panel-body p {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.78;
+  margin-bottom: 14px;
+}
+.panel-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* A definition list of the chapter's hard numbers. Dotted leaders tie the
+   label to the value the way a spec sheet does. */
+.panel-notes {
+  margin-top: 26px;
+  border-top: 1px solid var(--hair);
+}
+.panel-note {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--hair);
+  font-size: 12.5px;
+}
+.panel-note dt {
+  color: var(--faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+.panel-note-dots {
+  flex: 1;
+  border-bottom: 1px dotted rgba(244, 241, 234, 0.16);
+  transform: translateY(-3px);
+}
+.panel-note dd {
+  color: var(--gold-soft);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* =========================================================================
+   Hero
+   ========================================================================= */
+
+.hero .chapter-sticky {
+  align-items: center;
+}
+
+/* The hero needs a wider column than the body copy does. At the shared
+   44ch measure the title had about 390px to render 920px of type in, so
+   it wrapped and dropped the "4" onto its own line. The panel is widened
+   for the title and the reading text is pulled back in below. */
+.hero .panel {
+  width: min(64ch, 100%);
+}
+.hero .panel-lead,
+.hero .hero-para {
+  max-width: 46ch;
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  /* Never wrap: "Golden Hands 4" is one line by definition, and the size
+     is scaled off the viewport so it always fits on it. */
+  white-space: nowrap;
+  font-size: clamp(34px, 6.4vw, 92px);
+  line-height: 1;
+  letter-spacing: -0.035em;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+/* Same wordmark, same rule — it should never break across lines either. */
+.loader-mark,
+.footer-mark,
+.nav-wordmark {
+  white-space: nowrap;
+}
+.hero-title .gold {
+  color: var(--gold);
+  font-style: italic;
+}
+.hero-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 26px;
+}
+.hero-para {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.78;
+  margin-top: 12px;
+}
+
+/* Rreshti i të dhënave nën tekstin e ballinës.
+   Këto rregulla ishin fshirë gabimisht dhe të dhënat dilnin si listë e
+   zhveshur poshtë njëra-tjetrës, që shtynte tekstin jashtë ekranit. */
+.hero-facts {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 26px;
+  border-top: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hair);
+}
+.hero-fact {
+  padding: 12px 20px 12px 0;
+  margin-right: 20px;
+  border-right: 1px solid var(--hair);
+}
+.hero-fact:last-child {
+  border-right: 0;
+  margin-right: 0;
+  padding-right: 0;
+}
+.hero-fact-value {
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 1;
+  color: var(--paper);
+}
+.hero-fact.is-accent .hero-fact-value {
+  color: var(--gold);
+  font-size: 17px;
+}
+.hero-fact-label {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-top: 7px;
+}
+
+/* =========================================================================
+   Hotspot label — the apartment is the button
+   -------------------------------------------------------------------------
+   There is no fixed CTA any more. The highlighted apartment on the second
+   floor is the control, and this is the label that names it on hover.
+   Fixed at the origin and moved with a transform written by JS, so
+   following the pointer never touches layout.
+   ========================================================================= */
+
+.stage-canvas.is-pointing {
+  cursor: pointer;
+}
+
+/* =========================================================================
+   Shënuesi mbi apartamentin e theksuar
+   -------------------------------------------------------------------------
+   Pozicioni vjen nga skena 3D: motori projekton cepin e apartamentit në
+   koordinata ekrani një herë për kuadër. Elementi vetëm zhvendoset — pa
+   layout, pa ripikturim — ndaj lëviz bashkë me ndërtesën pa kosto.
+   ========================================================================= */
+
+.hs-marker {
+  position: fixed;
+  z-index: 34;
+  /* Trup i vetin, ndryshe butoni del 0x0 sepse gjithçka brenda është
+     absolute — dhe atëherë nuk kapet as me maus as me gisht. 44px është
+     edhe masa minimale e rekomanduar për prekje. */
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+/* Pika në fasadë. */
+.hs-dot {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--brand-gold);
+  border: 2px solid var(--brand-ink);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Dy unaza që dalin nga pika, me kohë të zhvendosur. Kjo është ajo që e
+   kap syrin: lëvizja bie në sy edhe kur njeriu nuk po e shikon drejt.
+   Animohen vetëm transform dhe opacity, pra i trajton kompozitori. */
+.hs-ping {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--brand-gold);
+  animation: hs-ping 2.4s cubic-bezier(0.16, 0.8, 0.3, 1) infinite;
+  pointer-events: none;
+}
+.hs-ping-2 {
+  animation-delay: 1.2s;
+}
+@keyframes hs-ping {
+  0% { transform: scale(1); opacity: 0.9; }
+  70% { transform: scale(4.2); opacity: 0; }
+  100% { transform: scale(4.2); opacity: 0; }
+}
+
+/* Vija që lidh flluskën me pikën, që të mos duket e varur në ajër. */
+/* Mbështjellësi i fjalëve — shfaqet vetëm nën kursor. */
+.hs-label {
+  position: absolute;
+  bottom: calc(100% - 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.55));
+}
+
+.hs-stem {
+  width: 2px;
+  height: 26px;
+  background: linear-gradient(180deg, var(--brand-gold), rgba(246, 210, 28, 0.25));
+  margin-top: -2px;
+}
+
+.hs-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px 8px 8px;
+  border-radius: 999px;
+  background: var(--brand-gold);
+  color: var(--brand-ink);
+  white-space: nowrap;
+  transition: transform 0.25s var(--ease);
+}
+.hs-marker:hover .hs-pill {
+  transform: translateY(-3px);
+}
+.hs-marker:focus-visible .hs-pill {
+  outline: 2px solid var(--paper);
+  outline-offset: 3px;
+}
+
+.hs-pill-icon {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--brand-ink);
+  color: var(--brand-gold);
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 600;
+}
+.hs-pill-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+  text-align: left;
+}
+.hs-pill-text strong {
+  font-size: 13px;
+  font-weight: 700;
+}
+.hs-pill-text small {
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+  margin-top: 1px;
+}
+
+@media (max-width: 900px) {
+  .hs-pill {
+    padding: 6px 13px 6px 6px;
+  }
+  .hs-pill-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 9px;
+  }
+  .hs-pill-text strong {
+    font-size: 12px;
+  }
+  .hs-pill-text small {
+    display: none;
+  }
+}
+
+/* Nëse sistemi kërkon më pak lëvizje, unazat ndalen — pika dhe flluska
+   mbeten, pra kuptimi nuk humbet. */
+@media (prefers-reduced-motion: reduce) {
+  .hs-ping {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+.hotspot-tip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 34;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px 10px 10px;
+  border-radius: 999px;
+  background: var(--brand-gold);
+  color: var(--brand-ink);
+  box-shadow: 0 16px 40px -16px rgba(246, 210, 28, 0.7);
+  will-change: transform;
+}
+.hotspot-tip-badge {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--brand-ink);
+  color: var(--brand-gold);
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 600;
+}
+.hotspot-tip-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+.hotspot-tip-text strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+.hotspot-tip-text small {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.64;
+  margin-top: 2px;
+}
+
+/* =========================================================================
+   Buttons
+   ========================================================================= */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 14px 24px;
+  border-radius: 2px;
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  position: relative;
+  overflow: hidden;
+  transition: color 0.35s var(--ease), transform 0.25s var(--ease);
+}
+/* The fill wipes up from the bottom instead of the whole button changing
+   colour at once. */
+.btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--gold);
+  transform: translateY(101%);
+  transition: transform 0.45s var(--ease);
+  z-index: -1;
+}
+.btn:hover {
+  color: var(--ink);
+  transform: translateY(-2px);
+}
+.btn:hover::before {
+  transform: none;
+}
+.btn-arrow {
+  transition: transform 0.35s var(--ease);
+}
+.btn:hover .btn-arrow {
+  transform: translateX(4px);
+}
+
+.btn-solid {
+  background: var(--gold);
+  color: var(--ink);
+}
+.btn-solid::before {
+  background: var(--paper);
+}
+.btn-solid:hover {
+  color: var(--ink);
+}
+
+.panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+/* =========================================================================
+   Drag hint
+   ========================================================================= */
+
+
+/* The drag hint, bottom left, fades out once the visitor has scrolled. */
+.drag-hint {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  z-index: 30;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+  text-align: center;
+  pointer-events: none;
+  transition: opacity 0.6s var(--ease);
+}
+
+/* =========================================================================
+   Crash screen (ErrorBoundary)
+   ========================================================================= */
+
+.crash {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: var(--ink);
+  color: var(--paper);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 32px;
+  text-align: center;
+}
+.crash-note {
+  font-size: 15px;
+  color: var(--muted);
+}
+.crash-title {
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.crash-detail {
+  max-width: 900px;
+  max-height: 50vh;
+  overflow: auto;
+  text-align: left;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgba(244, 241, 234, 0.7);
+  background: #101216;
+  border: 1px solid var(--hair);
+  padding: 16px;
+  white-space: pre-wrap;
+}
+
+/* =========================================================================
+   Loader
+   ========================================================================= */
+
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  transition: opacity 0.8s var(--ease), visibility 0.8s;
+}
+.loader.is-done {
+  opacity: 0;
+  visibility: hidden;
+}
+.loader-mark {
+  font-family: var(--font-display);
+  font-size: clamp(26px, 4vw, 40px);
+  letter-spacing: 0.01em;
+}
+.loader-mark em {
+  font-style: italic;
+  color: var(--gold);
+}
+.loader-bar {
+  width: min(240px, 60vw);
+  height: 1px;
+  background: var(--hair);
+  overflow: hidden;
+}
+.loader-fill {
+  height: 100%;
+  width: 0;
+  background: var(--gold);
+  transition: width 0.4s var(--ease);
+}
+.loader-pct {
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* =========================================================================
+   Tour overlay
+   ========================================================================= */
+
+.tour {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(6, 7, 9, 0.94);
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+}
+.tour-bar {
+  height: 58px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 clamp(16px, 4vw, 32px);
+  border-bottom: 1px solid var(--hair);
+}
+.tour-title {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.tour-close {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: color 0.25s var(--ease);
+}
+.tour-close:hover {
+  color: var(--paper);
+}
+.tour-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+.tour-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+/* Covers the embed while it boots, so the visitor sees our wording rather
+   than whatever the third-party viewer puts on screen mid-load. */
+.tour-curtain {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  background: #07080a;
+}
+
+.tour-ring {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--brand-gold);
+  border: 1px solid rgba(246, 210, 28, 0.18);
+  position: relative;
+}
+/* A single arc spinning inside the track — transform only. */
+.tour-ring::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  border-top-color: var(--brand-gold);
+  border-right-color: var(--brand-gold);
+  animation: spin 1.15s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.tour-beat {
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  text-align: center;
+  padding: 0 24px;
+}
+
+.tour-escape {
+  position: absolute;
+  left: 50%;
+  bottom: 30px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 12px 20px;
+  border-radius: 3px;
+  background: rgba(12, 14, 18, 0.94);
+  border: 1px solid var(--hair);
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+.tour-escape a {
+  color: var(--brand-gold);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.tour-escape a:hover {
+  text-decoration: underline;
+}
+
+/* =========================================================================
+   Contact overlay — sweeps in from the right
+   ========================================================================= */
+
+.contact {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  overflow: hidden;
+  /* The wrapper is only a clipping frame; the two sheets inside are what
+     move, so nothing here takes clicks on its own. */
+  pointer-events: none;
+}
+.contact-sweep,
+.contact-panel {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+/* The gold leads. It is never seen in full — only as an edge running
+   ahead of the black, which is what gives the sweep its direction. */
+.contact-sweep {
+  background: var(--brand-gold);
+}
+.contact-panel {
+  background: #07080a;
+  pointer-events: auto;
+  overflow-y: auto;
+  border-left: 1px solid rgba(246, 210, 28, 0.22);
+}
+
+.contact-inner {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  padding: clamp(64px, 10vh, 120px) clamp(24px, 8vw, 120px);
+  max-width: 780px;
+}
+
+.contact-close {
+  position: absolute;
+  top: 24px;
+  right: clamp(24px, 5vw, 56px);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: color 0.25s var(--ease);
+}
+.contact-close:hover {
+  color: var(--brand-gold);
+}
+
+.contact-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--brand-gold);
+  margin-bottom: 18px;
+}
+.contact-title {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 7vw, 82px);
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+  margin-bottom: 20px;
+}
+.contact-lead {
+  font-size: clamp(16px, 1.3vw, 19px);
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 46ch;
+  margin-bottom: 40px;
+}
+
+.contact-rows {
+  width: 100%;
+  border-top: 1px solid var(--hair);
+  margin-bottom: 36px;
+}
+.contact-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 28px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--hair);
+}
+.contact-row dt {
+  flex: none;
+  width: 110px;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.contact-row dd {
+  font-family: var(--font-display);
+  font-size: clamp(20px, 2.4vw, 28px);
+  color: var(--paper);
+}
+.contact-row dd a {
+  transition: color 0.25s var(--ease);
+}
+.contact-row dd a:hover {
+  color: var(--brand-gold);
+}
+
+.contact-btn {
+  text-decoration: none;
+}
+
+/* WhatsApp dhe Telegram, në fund të kontaktit. Ngjyrat e vetë markave —
+   janë të njohura pikërisht nga ngjyra, dhe ari do t'i bënte të
+   panjohshme. */
+.contact-chat {
+  margin-top: 34px;
+  padding-top: 26px;
+  border-top: 1px solid var(--hair);
+  width: 100%;
+}
+.contact-chat-label {
+  display: block;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 14px;
+}
+.contact-chat-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.chat-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 20px 11px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  transition: transform 0.25s var(--ease), filter 0.25s var(--ease);
+}
+.chat-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+  flex: none;
+}
+.chat-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+.chat-btn.is-wa {
+  background: #25d366;
+  color: #06331a;
+}
+.chat-btn.is-tg {
+  background: #29a9eb;
+  color: #04283c;
+}
+.contact-foot {
+  margin-top: 40px;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+@media (max-width: 900px) {
+  .contact-inner {
+    justify-content: flex-start;
+    padding-top: 90px;
+  }
+  .contact-row dt {
+    width: 100%;
+  }
+}
+
+/* =========================================================================
+   Closing — advantages and other projects
+   -------------------------------------------------------------------------
+   The first block on the page with a solid ground under it. The camera has
+   finished by here, so the building stops showing through and the page
+   ends on something to read rather than on a model.
+   ========================================================================= */
+
+.closing {
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
+  background: linear-gradient(180deg, rgba(7, 8, 10, 0) 0%, #07080a 12%, #07080a 100%);
+  padding: 8vh clamp(18px, 5vw, 76px) 0;
+}
+.closing-block {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 7vh 0;
+  border-bottom: 1px solid var(--hair);
+}
+.closing-block:last-child {
+  border-bottom: 0;
+}
+.closing-title {
+  font-family: var(--font-display);
+  font-size: clamp(34px, 4.6vw, 60px);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+.closing-lead {
+  font-size: clamp(15px, 1.2vw, 18px);
+  color: var(--muted);
+  max-width: 52ch;
+  margin-bottom: 44px;
+}
+
+/* Advantages: a plain auto-fitting grid, so the count can change in
+   content without touching the CSS. */
+.adv-grid,
+.proj-grid {
+  list-style: none;
+  display: grid;
+  gap: 1px;
+  /* The 1px gap plus a background makes the hairline rules between cells,
+     which avoids doubled borders at every junction. */
+  background: var(--hair);
+  border: 1px solid var(--hair);
+}
+.adv-grid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+.adv {
+  background: #07080a;
+  padding: 26px 24px;
+}
+.adv-title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--gold-soft);
+  margin-bottom: 8px;
+}
+.adv-note {
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+/* Projects */
+.proj-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.proj {
+  background: #07080a;
+  padding: 30px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: background 0.3s var(--ease);
+}
+.proj:hover {
+  background: #0d0f14;
+}
+.proj-name {
+  font-family: var(--font-display);
+  font-size: clamp(20px, 2.2vw, 26px);
+  font-weight: 600;
+  line-height: 1.15;
+}
+.proj-note {
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.proj-year {
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+@media (max-width: 900px) {
+  .closing-block {
+    padding: 5vh 0;
+  }
+  .closing-lead {
+    margin-bottom: 30px;
+  }
+}
+
+/* =========================================================================
+   Contact form
+   ========================================================================= */
+
+.cform {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-bottom: 8px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.field label {
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.field input,
+.field textarea {
+  font: inherit;
+  font-size: 15px;
+  color: var(--paper);
+  background: rgba(244, 241, 234, 0.04);
+  border: 1px solid var(--hair);
+  border-radius: 2px;
+  padding: 12px 14px;
+  width: 100%;
+  transition: border-color 0.2s var(--ease), background 0.2s var(--ease);
+}
+.field textarea {
+  resize: vertical;
+  min-height: 110px;
+}
+.field input:hover,
+.field textarea:hover {
+  border-color: rgba(244, 241, 234, 0.24);
+}
+.field input:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--gold);
+  background: rgba(244, 241, 234, 0.06);
+}
+/* The error is carried by colour AND by the message text, never by colour
+   alone — the border shift is a hint, the sentence is the information. */
+.field.has-error input,
+.field.has-error textarea {
+  border-color: #e8794a;
+}
+.field-err {
+  font-size: 12.5px;
+  color: #f0a184;
+}
+
+/* Honeypot: reachable in the DOM, invisible and unfocusable to a person. */
+.hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.form-done,
+.form-err {
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--gold-soft);
+  max-width: 46ch;
+}
+.form-err {
+  color: #f0a184;
+}
+.cform button[disabled] {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* =========================================================================
+   Cookie consent
+   ========================================================================= */
+
+.consent {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 88;
+  width: min(680px, calc(100% - 32px));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 22px;
+  justify-content: space-between;
+  padding: 18px 22px;
+  background: rgba(12, 14, 18, 0.97);
+  border: 1px solid var(--hair);
+  border-radius: 4px;
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.8);
+}
+.consent-text {
+  flex: 1 1 300px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.consent-text a {
+  color: var(--gold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.consent-actions {
+  display: flex;
+  gap: 10px;
+}
+/* Both choices are real buttons at the same size. A banner where
+   declining is harder than accepting is not consent. */
+.consent-btn {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 11px 18px;
+  border-radius: 2px;
+  border: 1px solid var(--hair);
+  color: var(--paper);
+  transition: border-color 0.2s var(--ease), background 0.2s var(--ease);
+}
+.consent-btn:hover {
+  border-color: rgba(244, 241, 234, 0.4);
+}
+.consent-btn.is-primary {
+  background: var(--brand-gold);
+  border-color: var(--brand-gold);
+  color: var(--brand-ink);
+}
+.consent-btn.is-primary:hover {
+  background: #ffe04a;
+}
+
+@media (max-width: 560px) {
+  .consent {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .consent-actions {
+    justify-content: stretch;
+  }
+  .consent-btn {
+    flex: 1;
+  }
+}
+
+/* =========================================================================
+   Footer
+   ========================================================================= */
+
+.footer {
+  position: relative;
+  z-index: 10;
+  pointer-events: auto; /* opts back in — see .scroll-root */
+  background: linear-gradient(180deg, rgba(7, 8, 10, 0) 0%, #07080a 22%);
+  padding: 90px clamp(18px, 5vw, 76px) 40px;
+}
+.footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-top: 1px solid var(--hair);
+  padding-top: 34px;
+}
+.footer-mark {
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 1.1;
+}
+.footer-mark em {
+  font-style: italic;
+  color: var(--gold);
+}
+.footer-meta {
+  font-size: 12px;
+  color: var(--faint);
+  line-height: 1.9;
+}
+.footer-meta a:hover {
+  color: var(--gold);
+}
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+  margin-top: 30px;
+  padding-top: 24px;
+  border-top: 1px solid var(--hair);
+}
+.footer-links a {
+  font-size: 12.5px;
+  color: var(--faint);
+  transition: color 0.2s var(--ease);
+}
+.footer-links a:hover {
+  color: var(--gold);
+}
+
+.footer-legal {
+  margin-top: 24px;
+  font-size: 11px;
+  line-height: 1.7;
+  /* Was 0.22 alpha — 2.0:1, unreadable. This is the disclaimer that says
+     the renders are illustrative, so it is exactly the text that must not
+     be hidden in the dark. */
+  color: var(--faint);
+  max-width: 70ch;
+}
+
+/* =========================================================================
+   Responsive
+   -------------------------------------------------------------------------
+   The panels move off the edges and centre, and the chapters get shorter
+   so the same story does not take three times the scrolling on a phone.
+   ========================================================================= */
+
+@media (max-width: 900px) {
+  :root {
+    --measure: 100%;
+    --nav-h: 56px;
+  }
+
+  /* The panel stops being sticky and simply flows over the fixed canvas.
+     A sticky panel has to fit inside 100vh, and these chapters do not —
+     three paragraphs and a spec table overflow a phone screen and get
+     clipped. Flowing, the text is as tall as it needs to be and the
+     section grows with it, so nothing is lost and the camera still tracks
+     the scroll exactly as before. */
+  .chapter {
+    height: auto;
+    min-height: 108vh;
+    /* Auto height means the browser cannot know the skipped size, so
+       skipping would collapse the section. */
+    content-visibility: visible;
+  }
+  .chapter-sticky,
+  .chapter.side-left .chapter-sticky,
+  .chapter.side-right .chapter-sticky {
+    position: static;
+    height: auto;
+    min-height: 108vh;
+    justify-content: center;
+    align-items: flex-end;
+    padding: calc(var(--nav-h) + 8vh) 16px 10vh;
+  }
+
+  /* The building is directly behind the words now, so they need their own
+     ground. It fades in from the top rather than starting as a hard box. */
+  .panel {
+    background: linear-gradient(
+      180deg,
+      rgba(8, 9, 11, 0) 0%,
+      rgba(8, 9, 11, 0.86) 12%,
+      rgba(8, 9, 11, 0.94) 100%
+    );
+    padding: 26px 18px 24px;
+    border-radius: 4px;
+  }
+
+  .panel-title {
+    font-size: clamp(30px, 8vw, 42px);
+  }
+  .panel-lead {
+    font-size: 16px;
+  }
+  .panel-body p {
+    font-size: 14.5px;
+  }
+
+  /* Off on phones: decoration that costs layers and reads as clutter on a
+     narrow screen. */
+  .panel-ghost,
+  .rail,
+  .drag-hint,
+  .stage-grain {
+    display: none;
+  }
+
+  .nav-links {
+    display: none;
+  }
+  .nav-cta {
+    padding: 9px 14px;
+    letter-spacing: 0.12em;
+  }
+
+  /* Still one line, so the size has to come off the viewport width rather
+     than a fixed ceiling — 14vw would have run "Golden Hands 4" past the
+     edge of a phone. */
+  .hero-title {
+    font-size: clamp(28px, 9vw, 54px);
+  }
+  .hero .panel {
+    width: 100%;
+  }
+  .nav-brand {
+    margin-left: clamp(8px, 4vw, 28px);
+  }
+  /* A grid rather than a wrapping row: the borders of a flex row break in
+     the wrong places once it wraps. */
+  .hero-facts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+  .hero-fact {
+    padding: 13px 14px 13px 0;
+    margin-right: 0;
+    border-right: 1px solid var(--hair);
+    border-bottom: 1px solid var(--hair);
+  }
+  .hero-fact:nth-child(2n) {
+    border-right: 0;
+    padding-left: 14px;
+  }
+  .hero-fact:nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+
+  .footer {
+    padding-top: 60px;
+  }
+
+  /* On a phone the hero copy flows to the bottom of its section, so it
+     needs to stop above the button rather than run underneath it. */
+}
+
+/* Honour the system setting: kill the ambient loops and shorten the
+   transitions. The camera still moves, because that is the content. */
+@media (prefers-reduced-motion: reduce) {
+  /* The tour spinner keeps turning: it is a progress indicator, not
+     decoration, and a frozen one reads as a hung page. */
+  * {
+    transition-duration: 0.01ms !important;
+  }
+}

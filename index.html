@@ -1,116 +1,124 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>GoldenHands Construction</title>
-  <link rel="stylesheet" href="/src/style.css" />
-</head>
-<body>
-  <!-- Desktop-only gate -->
-  <div id="mobile-block">
-    <div>
-      <h1>GoldenHands Construction</h1>
-      <h2>Desktop only</h2>
-      <p>This experience is built for a large screen. Please open it on a desktop computer.</p>
-    </div>
-  </div>
+<html lang="sq">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0a0b0d" />
 
-  <div id="app">
-    <canvas id="scene"></canvas>
+    <!-- Title carries the project, the offer and the place, in that order:
+         it is what shows in the tab, in search results and in a shared link,
+         and it gets truncated around 60 characters. -->
+    <title>Golden Hands 4 — Apartamente dhe njësi tregtare në qendër</title>
+    <meta
+      name="description"
+      content="42 apartamente dhe 6 njësi tregtare në cep të një kryqëzimi në qendër të qytetit. Përfundim 2026. Shfletoni ndërtesën në modelin 3D të projektit."
+    />
+    <link rel="canonical" href="__CANONICAL__" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
 
-    <!-- Loading -->
-    <div id="loader">
-      <div class="loader-brand">GoldenHands Construction</div>
-      <div class="bar"><div class="bar-fill" id="bar-fill"></div></div>
-      <div class="loader-label" id="loader-label">Loading</div>
-    </div>
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="__SITE_NAME__" />
+    <meta property="og:locale" content="__LOCALE__" />
+    <meta property="og:title" content="Golden Hands 4 — Apartamente dhe njësi tregtare në qendër" />
+    <meta
+      property="og:description"
+      content="Shtatë kate banimi mbi një përdhesë tregtare, në cep të një kryqëzimi. Shfletoni ndërtesën në modelin 3D të projektit."
+    />
+    <meta property="og:url" content="__CANONICAL__" />
+    <meta property="og:image" content="__OG_IMAGE__" />
+    <meta property="og:image:width" content="__OG_W__" />
+    <meta property="og:image:height" content="__OG_H__" />
+    <meta property="og:image:alt" content="Pamje tredimensionale e ndërtesës Golden Hands 4 nga cepi i kryqëzimit." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Golden Hands 4 — Apartamente dhe njësi tregtare në qendër" />
+    <meta
+      name="twitter:description"
+      content="Shtatë kate banimi mbi një përdhesë tregtare. Shfletoni ndërtesën në modelin 3D të projektit."
+    />
+    <meta name="twitter:image" content="__OG_IMAGE__" />
 
-    <!-- Hover tooltip -->
-    <div id="tooltip"></div>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/brand/logo.png" />
+    <link rel="manifest" href="/site.webmanifest" />
 
-    <!-- Navbar: solid gold bar carrying the logo tile, page links and
-         the current-scene crumb. -->
-    <!-- Navbar: solid gold bar carrying the logo, page links and the
-         current-scene crumb. The inner wrapper keeps the contents on a
-         readable measure instead of spreading them across the window. -->
-    <header id="hud-top">
-      <div class="nav-inner">
-        <a class="nav-brand" href="/" aria-label="Golden Hands Construction — ballina">
-          <img class="nav-logo" src="/brand/logo.png"
-               alt="Golden Hands Construction" width="92" height="92"
-               onerror="this.closest(&quot;.nav-brand&quot;).classList.add(&quot;no-logo&quot;)">
-          <span class="nav-fallback">GOLDEN HANDS</span>
-        </a>
+    <!-- Playfair Display carries the headings, Inter everything else. Both
+         cover Albanian's ë and ç, which rules out a good half of the
+         display faces that would otherwise suit the brand. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap"
+      rel="stylesheet"
+    />
 
-        <nav class="nav-links" aria-label="Kryesore">
-          <a href="#" class="nav-link is-active" data-nav="building">Ndërtesa</a>
-          <a href="#" class="nav-link" data-nav="tour">Tur 360&deg;</a>
-          <a href="#" class="nav-link" data-nav="contact">Kontakt</a>
-        </nav>
+    <!-- Nothing renders until the model is fetched AND decoded, and the
+         decoder is a separate request the loader only makes once the JS
+         has run. Both start here instead, in parallel with the bundle. -->
+    <link
+      rel="preload"
+      href="/models/GoldenHands3d_Building.glb"
+      as="fetch"
+      type="model/gltf-binary"
+      crossorigin
+    />
+    <link rel="preload" href="/draco/draco_wasm_wrapper.js" as="script" />
+    <link rel="preload" href="/draco/draco_decoder.wasm" as="fetch" crossorigin />
 
-        <div class="crumb" id="crumb">Golden Hands 4</div>
-      </div>
-    </header>
+    <!-- Tells search engines what this actually is: a building being sold by
+         a named company, not a generic page. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "__SITE_URL__/#organization",
+            "name": "Golden Hands Construction",
+            "url": "__SITE_URL__/",
+            "logo": "__SITE_URL__/brand/logo.png",
+            "email": "info@goldenhands.al"
+          },
+          {
+            "@type": "WebSite",
+            "@id": "__SITE_URL__/#website",
+            "url": "__SITE_URL__/",
+            "name": "Golden Hands 4",
+            "inLanguage": "sq",
+            "publisher": { "@id": "__SITE_URL__/#organization" }
+          },
+          {
+            "@type": "ApartmentComplex",
+            "name": "Golden Hands 4",
+            "url": "__SITE_URL__/",
+            "description": "Shtatë kate banimi mbi një përdhesë tregtare, në cep të një kryqëzimi në qendër të qytetit.",
+            "image": "__OG_IMAGE__",
+            "numberOfAccommodationUnits": 42,
+            "numberOfFloors": 7,
+            "provider": { "@id": "__SITE_URL__/#organization" }
+          }
+        ]
+      }
+    </script>
+  </head>
 
-    <!-- Control + info panel, under the building name -->
-    <aside id="panel">
-      <!-- Orbit / zoom controls -->
-      <div class="panel-block">
-        <div class="panel-title">Kontrollet</div>
-        <div class="pad">
-          <button class="ctl" id="ctl-up"    title="Lart"    aria-label="Lart">&#9650;</button>
-          <button class="ctl" id="ctl-left"  title="Majtas"  aria-label="Majtas">&#9664;</button>
-          <button class="ctl" id="ctl-reset" title="Rivendos" aria-label="Rivendos">&#8635;</button>
-          <button class="ctl" id="ctl-right" title="Djathtas" aria-label="Djathtas">&#9654;</button>
-          <button class="ctl" id="ctl-down"  title="Poshtë"  aria-label="Poshtë">&#9660;</button>
-        </div>
-        <div class="zoom-row">
-          <button class="ctl wide" id="ctl-out" aria-label="Zvogëlo">&minus;</button>
-          <span class="zoom-label">Zoom</span>
-          <button class="ctl wide" id="ctl-in" aria-label="Zmadho">&plus;</button>
-        </div>
-      </div>
+  <body>
+    <a class="skip" href="#kontakt">Kalo te kontakti</a>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
 
-      <!-- Building facts -->
-      <div class="panel-block">
-        <div class="panel-title">Të dhëna</div>
-        <dl class="facts">
-          <div><dt>Kate</dt><dd>7</dd></div>
-          <div><dt>Apartamente</dt><dd>42</dd></div>
-          <div><dt>Njësi tregtare</dt><dd>6</dd></div>
-          <div><dt>Sipërfaqja</dt><dd>4 200 m&sup2;</dd></div>
-          <div><dt>Viti</dt><dd>2026</dd></div>
-          <div><dt>Statusi</dt><dd class="ok">Në ndërtim</dd></div>
-        </dl>
-      </div>
-
-      <!-- 360° interior tour -->
-      <div class="panel-block">
-        <div class="panel-title">Tur virtual</div>
-        <button class="tour-btn" id="tour-unit2" type="button" disabled>
-          Apartamenti Nr. 2 &middot; Tur 360&deg;
-        </button>
-        <p class="tour-note" id="tour-note"></p>
-      </div>
-
-      <!-- Description -->
-      <div class="panel-block">
-        <div class="panel-title">Përshkrimi</div>
-        <p class="panel-text">
-          Ndërtesë banimi me shtatë kate në qendër të qytetit, me njësi
-          tregtare në katin përdhes dhe ballkone për çdo apartament.
-          Ndërtuar me materiale cilësore dhe standarde bashkëkohore.
+    <noscript>
+      <div class="noscript">
+        <h1>Golden Hands 4</h1>
+        <p>
+          Kjo faqe e paraqet ndërtesën në një model tredimensional, i cili
+          kërkon JavaScript. Aktivizojeni në shfletuesin tuaj, ose shihni
+          informacionin e projektit në faqet e mëposhtme.
+        </p>
+        <p>
+          <a href="/pyetje/">Pyetje të shpeshta</a> ·
+          <a href="mailto:info@goldenhands.al">info@goldenhands.al</a>
         </p>
       </div>
-    </aside>
-
-    <!-- Back button, only in detail view -->
-    <button id="back-btn" class="hidden">&larr; Back to building</button>
-
-    <!-- Hint -->
-    <div id="hint">Drag to orbit &middot; Scroll to zoom</div>
-  </div>
-
-  <script type="module" src="/src/main.js"></script>
-</body>
+    </noscript>
+  </body>
 </html>

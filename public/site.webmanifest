@@ -1,0 +1,14 @@
+{
+  "name": "Golden Hands 4",
+  "short_name": "GH4",
+  "description": "Banim dhe tregti në qendër të qytetit.",
+  "lang": "sq",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0b0d",
+  "theme_color": "#0a0b0d",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/brand/logo.png", "sizes": "90x90", "type": "image/png" }
+  ]
+}
