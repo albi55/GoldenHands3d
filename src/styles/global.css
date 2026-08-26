@@ -1233,7 +1233,10 @@ button {
 }
 @media (min-width: 1000px) {
   .contact-cols {
-    grid-template-columns: minmax(0, 1fr) minmax(460px, 48%);
+    /* E majta sa i duhet formularit, jo gjysma e ekranit. Me 1fr ajo
+       merrte 990px kur teksti brenda saj është 550px, dhe mbeteshin ~440px
+       të zeza mes formularit dhe hartës. */
+    grid-template-columns: minmax(440px, 26%) minmax(0, 1fr);
   }
 }
 
@@ -1244,7 +1247,7 @@ button {
   align-items: flex-start;
   justify-content: center;
   gap: 0;
-  padding: clamp(64px, 10vh, 120px) clamp(24px, 6vw, 80px);
+  padding: clamp(48px, 8vh, 96px) clamp(24px, 3.4vw, 60px);
   max-width: 780px;
 }
 
@@ -1260,14 +1263,16 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: clamp(24px, 4vw, 56px);
+  /* Jo simetrike: pak majtas që karta të zgjatet, më shumë djathtas që
+     të mos ngjitet me skajin e ekranit. */
+  padding: clamp(14px, 1.4vw, 24px) clamp(20px, 3vw, 58px) clamp(14px, 1.4vw, 24px) clamp(12px, 1vw, 18px);
 }
 /* Karta: e plotë brenda kornizës, me qoshe të buta dhe hije, që të
    lexohet si element më vete dhe jo si mur i ngjitur me ekranin. */
 .contact-card {
   position: relative;
   width: 100%;
-  height: min(78vh, 720px);
+  height: min(90vh, 980px);
   border-radius: 6px;
   overflow: hidden;
   border: 1px solid rgba(246, 210, 28, 0.22);
@@ -1320,14 +1325,34 @@ button {
   font-size: 13px;
   color: var(--muted);
 }
-.contact-side-cap a {
-  font-size: 12.5px;
-  color: var(--paper);
-  margin-top: 4px;
-  transition: color 0.2s var(--ease);
+/* Buton, jo tekst. Mbi një hartë me ndërtesa, rrugë dhe emra, teksti i
+   zhveshur humbet — i duhet një fushë e vetja që të lexohet dhe që të
+   duket se klikohet. */
+.contact-dir {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  margin-top: 10px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: var(--brand-gold);
+  color: var(--brand-ink);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.7);
+  transition: transform 0.2s var(--ease), background 0.2s var(--ease);
 }
-.contact-side-cap a:hover {
-  color: var(--gold);
+.contact-dir::after {
+  content: "→";
+  font-size: 13px;
+}
+.contact-dir:hover {
+  transform: translateY(-1px);
+  background: #ffe04a;
+  color: var(--brand-ink);
 }
 
 @media (max-width: 999px) {

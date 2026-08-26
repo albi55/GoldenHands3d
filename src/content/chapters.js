@@ -475,7 +475,7 @@ export const UI = {
   contactWrite: 'Na shkruani',
   contactChat: 'Ose na shkruani drejtpërdrejt',
   contactWhere: 'Vendndodhja',
-  contactMapLink: 'Hape në hartë',
+  contactMapLink: 'Merr udhëzimet',
   contactNoMap: 'Ndërtesa Golden Hands 4',
 
   /* Contact form */

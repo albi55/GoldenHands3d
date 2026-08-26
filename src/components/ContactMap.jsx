@@ -49,7 +49,7 @@ export default function ContactMap() {
      Ngulitja mbetet OSM sepse nuk kërkon çelës API dhe nuk vendos cookies
      gjurmuese — pra faqja nuk merr detyrime të reja privatësie vetëm për
      të treguar një pikë në hartë. */
-  const full = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+  const full = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
 
   return (
     <aside className="contact-side">
@@ -64,8 +64,8 @@ export default function ContactMap() {
         <div className="contact-side-cap">
           <strong>{UI.contactWhere}</strong>
           {address && <small>{address}</small>}
-          <a href={full} target="_blank" rel="noopener noreferrer">
-            {UI.contactMapLink} →
+          <a className="contact-dir" href={full} target="_blank" rel="noopener noreferrer">
+            {UI.contactMapLink}
           </a>
         </div>
       </div>
