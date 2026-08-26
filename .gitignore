@@ -12,3 +12,7 @@ dist
 # vanilla-JS. Të dyja ndodhen në historik te commit-i 494f926, ndaj s'ka
 # pse t'i mbajë repo-ja dy herë.
 .attic/
+
+# Skedarë pune të matjes dhe testimit, të krijuar përkohësisht në rrënjë.
+.*.mjs
+.*.cjs
