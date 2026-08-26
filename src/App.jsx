@@ -24,8 +24,8 @@ export default function App() {
   const [failed, setFailed] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
-  /* Ku ta vizatojmë shënuesin mbi apartament; e mbush motori. */
-  const [anchor, setAnchor] = useState({ x: -1, y: -1, visible: false });
+  /* Vetëm dukshmëria; pozicionin e shkruan motori drejt në element. */
+  const [markerOn, setMarkerOn] = useState(false);
   /* Fjalët mbi apartament shfaqen vetëm nën kursor. */
   const [hotHover, setHotHover] = useState(false);
 
@@ -71,7 +71,7 @@ export default function App() {
   useEffect(() => {
     const stage = stageRef.current;
     if (!stage) return undefined;
-    stage.onHotspotAnchor = setAnchor;
+    stage.onHotspotAnchor = setMarkerOn;
     stage.onHotspotChange = (s) => setHotHover(s.hover);
     stage.onHotspotClick = openTour;
     return () => {
@@ -133,7 +133,7 @@ export default function App() {
         {contactOpen && <ContactOverlay onClose={() => setContactOpen(false)} />}
       </AnimatePresence>
 
-      <HotspotMarker anchor={anchor} hover={hotHover} onOpen={openTour} />
+      <HotspotMarker visible={markerOn} hover={hotHover} onOpen={openTour} />
 
       <CookieConsent />
     </>

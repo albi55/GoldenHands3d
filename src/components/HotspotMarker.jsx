@@ -19,23 +19,28 @@ import { UI } from '../content/chapters';
  * material would keep the WebGL loop awake forever, whereas a CSS
  * animation on a small element is composited and costs nothing.
  */
-export default function HotspotMarker({ anchor, hover, onOpen }) {
+export default function HotspotMarker({ visible, hover, onOpen }) {
   /* Një burim i vetëm i vërtetë: gjendja e kursorit te motori, i cili e
      numëron edhe vetë shënuesin si pjesë të apartamentit. Gjendje e dytë
      lokale këtu do të thoshte dy gjendje që mund të mos pajtohen — dhe
      ajo e dyta mbeti e ndezur. */
   return (
     <AnimatePresence>
-      {anchor.visible && (
+      {visible && (
         <motion.button
           type="button"
           className="hs-marker"
           onClick={onOpen}
-          style={{ left: anchor.x, top: anchor.y }}
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.85 }}
-          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          /* Vetëm opacity — asnjë veti transformimi.
+             Motori e vendos këtë element duke i shkruar `transform`.
+             Nëse Framer animon `scale`, shkruan `transform` të vetin dhe e
+             fshin pozicionin: shënuesi kërcen te këndi lart-majtas dhe
+             klikimi bie mbi shiritin e sipërm. E njëjta gjë ka ndodhur me
+             butonin e ballinës dhe me qendërzimin e kontaktit. */
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           aria-label={UI.markerTitle + ' — ' + UI.markerSub}
         >
           {/* Two rings leaving the point, offset in time. These stay on

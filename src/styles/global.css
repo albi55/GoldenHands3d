@@ -696,13 +696,16 @@ button {
 
 .hs-marker {
   position: fixed;
+  /* left/top mbeten 0; pozicionin e vendos motori me transform, që të
+     mos prekë faqosjen në asnjë kuadër. */
+  left: 0;
+  top: 0;
   z-index: 34;
   /* Trup i vetin, ndryshe butoni del 0x0 sepse gjithçka brenda është
      absolute — dhe atëherë nuk kapet as me maus as me gisht. 44px është
      edhe masa minimale e rekomanduar për prekje. */
   width: 44px;
   height: 44px;
-  transform: translate(-50%, -50%);
   display: grid;
   place-items: center;
   padding: 0;

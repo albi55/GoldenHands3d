@@ -408,11 +408,24 @@ export default class BuildingStage {
     const hit = this._ray.intersectObjects(this.hotspotTargets, false)[0];
     if (!hit) return false;
 
-    const wall = this._ray.intersectObject(this.model, true)[0];
-    /* The panels sit 6 cm proud of the facade, so the wall behind them is
-       always a little further away; a wall nearer than that is a different
-       part of the building standing in front. */
-    return !wall || wall.distance > hit.distance + 0.02;
+    /* Nuk ka nevojë për rreze të dytë kundër ndërtesës.
+
+       Kjo më parë lëshonte një rreze kundër modelit të bashkuar për të
+       parë nëse fasada tjetër i qëndronte përpara. Meshet e bashkuara i
+       kanë sferat kufizuese shumë të mëdha, ndaj ajo rreze përfundonte e
+       testuar kundër shumicës së trekëndëshave — dhe kur kursori i një
+       përdoruesi rrinte mbi apartamentin gjatë rrëshqitjes, kjo ndodhte
+       në çdo kuadër.
+
+       Panelet janë në dy faqe të sheshta me normale +X dhe +Z: nëse
+       kamera është jashtë njërës prej tyre, cepi është i dukshëm. Dy
+       krahasime në vend të një rrezeje. */
+    const c = this._hotspotCentre;
+    if (!c) return true;
+    const cam = this.camera.position;
+    const outX = HOTSPOT_CORNER.x > 0 ? cam.x > c.x : cam.x < c.x;
+    const outZ = HOTSPOT_CORNER.z > 0 ? cam.z > c.z : cam.z < c.z;
+    return outX || outZ;
   }
 
   /**
@@ -1083,10 +1096,39 @@ export default class BuildingStage {
     /* Sub-pixel moves are not worth a React render. */
     if (visible === a.visible && Math.abs(x - a.x) < 1 && Math.abs(y - a.y) < 1) return;
 
-    a.x = x;
-    a.y = y;
-    a.visible = visible;
-    this.onHotspotAnchor({ x, y, visible });
+    /* Pozicioni shkruhet drejt në element, jo përmes gjendjes së Reactit.
+
+       Më parë kjo thërriste një përditësim gjendjeje sa herë shënuesi
+       lëvizte një piksel — pra në çdo kuadër rrëshqitjeje — dhe secili
+       rirenderonte gjithë pemën: trembëdhjetë kapitujt, përmbledhjen dhe
+       fundin. Kushtonte 40 sekonda pune skripti në një rrëshqitje të
+       vetme nëpër faqe.
+
+       React njoftohet vetëm kur shënuesi shfaqet ose fshihet, çka ndodh
+       disa herë gjatë gjithë faqes. */
+    if (x !== a.x || y !== a.y) {
+      a.x = x;
+      a.y = y;
+      const el = this._markerEl || (this._markerEl = document.querySelector('.hs-marker'));
+      /* transform, jo left/top: e para trajtohet nga kompozitori, e dyta
+         detyron rillogaritje faqosjeje në çdo kuadër. Zhvendosja për
+         qendërzimin shtohet këtu, sepse transform-i i CSS-it mbishkruhet. */
+      /* transform, jo left/top: e para trajtohet nga kompozitori, e dyta
+         detyron rillogaritje faqosjeje në çdo kuadër. Zhvendosja për
+         qendërzimin shtohet këtu, sepse transform-i i CSS-it mbishkruhet. */
+      if (el) {
+        el.style.transform =
+          'translate3d(' + x + 'px, ' + y + 'px, 0) translate(-50%, -50%)';
+      }
+    }
+
+    if (visible !== a.visible) {
+      a.visible = visible;
+      /* Elementi krijohet ose hiqet nga React, ndaj kërkimi i ruajtur
+         bëhet i pavlefshëm sa herë ndryshon dukshmëria. */
+      this._markerEl = null;
+      this.onHotspotAnchor(visible);
+    }
   }
 
   /** Wake the loop. Every input handler calls this. */
