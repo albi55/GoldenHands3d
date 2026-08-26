@@ -1233,7 +1233,7 @@ button {
 }
 @media (min-width: 1000px) {
   .contact-cols {
-    grid-template-columns: minmax(0, 1fr) minmax(380px, 42%);
+    grid-template-columns: minmax(0, 1fr) minmax(460px, 48%);
   }
 }
 
@@ -1250,16 +1250,28 @@ button {
 
 /* ---------- Ana e djathtë: harta ose pamja ---------- */
 
+/* Kolona e djathtë është vetëm kornizë; harta rri si kartë brenda saj.
+   Më parë ishte e ngjitur me skajin e ekranit dhe dukej si mur, jo si
+   element i menduar. Tani rri e centruar, me hapësirë rreth e rrotull. */
 .contact-side {
-  /* E ngjitur në lartësinë e ekranit: kolona e majtë rrëshqet, kjo rri.
-     Ndryshe zgjatej sa teksti (1101px) dhe titulli poshtë saj binte
-     jashtë ekranit, ku nuk e shihte kush. */
   position: sticky;
   top: 0;
   height: 100vh;
-  min-height: 320px;
-  border-left: 1px solid var(--hair);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(24px, 4vw, 56px);
+}
+/* Karta: e plotë brenda kornizës, me qoshe të buta dhe hije, që të
+   lexohet si element më vete dhe jo si mur i ngjitur me ekranin. */
+.contact-card {
+  position: relative;
+  width: 100%;
+  height: min(78vh, 720px);
+  border-radius: 6px;
   overflow: hidden;
+  border: 1px solid rgba(246, 210, 28, 0.22);
+  box-shadow: 0 40px 90px -40px rgba(0, 0, 0, 0.9);
   background: #0c0e12;
 }
 .contact-map {
@@ -1271,7 +1283,7 @@ button {
   /* Harta vjen e bardhë dhe e ndritshme, çka bie ndesh me faqen. E ulur
      kaq, rri me pjesën tjetër pa u bërë e palexueshme — rrugët dhe emrat
      duken ende qartë. */
-  filter: grayscale(0.55) brightness(0.58) contrast(1.12);
+  filter: grayscale(0.25) brightness(0.92) contrast(1.02);
 }
 .contact-side-img {
   position: absolute;

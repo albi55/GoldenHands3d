@@ -19,11 +19,13 @@ export default function ContactMap() {
 
   if (!has) {
     return (
-      <aside className="contact-side is-empty" aria-hidden="true">
-        <img className="contact-side-img" src="/og.png" alt="" />
-        <div className="contact-side-cap">
-          <strong>{UI.contactNoMap}</strong>
-          <small>{BUILDING.tagline}</small>
+      <aside className="contact-side" aria-hidden="true">
+        <div className="contact-card">
+          <img className="contact-side-img" src="/og.png" alt="" />
+          <div className="contact-side-cap">
+            <strong>{UI.contactNoMap}</strong>
+            <small>{BUILDING.tagline}</small>
+          </div>
         </div>
       </aside>
     );
@@ -51,19 +53,21 @@ export default function ContactMap() {
 
   return (
     <aside className="contact-side">
-      <iframe
-        className="contact-map"
-        src={embed}
-        title={UI.contactWhere}
-        loading="lazy"
-        referrerPolicy="no-referrer-when-downgrade"
-      />
-      <div className="contact-side-cap">
-        <strong>{UI.contactWhere}</strong>
-        {address && <small>{address}</small>}
-        <a href={full} target="_blank" rel="noopener noreferrer">
-          {UI.contactMapLink} →
-        </a>
+      <div className="contact-card">
+        <iframe
+          className="contact-map"
+          src={embed}
+          title={UI.contactWhere}
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+        />
+        <div className="contact-side-cap">
+          <strong>{UI.contactWhere}</strong>
+          {address && <small>{address}</small>}
+          <a href={full} target="_blank" rel="noopener noreferrer">
+            {UI.contactMapLink} →
+          </a>
+        </div>
       </div>
     </aside>
   );
