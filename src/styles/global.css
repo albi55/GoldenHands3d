@@ -1128,48 +1128,43 @@ button {
   background: #07080a;
 }
 
+/* Rreth që mbushet, jo unazë që sillet: tregon sa ka mbetur, jo thjesht
+   se diçka po ndodh. */
 .tour-ring {
-  width: 92px;
-  height: 92px;
-  border-radius: 50%;
+  position: relative;
+  width: 112px;
+  height: 112px;
   display: grid;
   place-items: center;
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: var(--brand-gold);
-  border: 1px solid rgba(246, 210, 28, 0.18);
-  position: relative;
 }
-/* A single arc spinning inside the track — transform only. */
-.tour-ring::before {
-  content: "";
+.tour-ring svg {
   position: absolute;
-  inset: -1px;
-  border-radius: 50%;
-  border: 1px solid transparent;
-  border-top-color: var(--brand-gold);
-  border-right-color: var(--brand-gold);
-  animation: spin 1.15s linear infinite;
-}
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Shiriti i përparimit të perdes sonë. Mbushet gjatë gjithë kohës që
-   mbahet, pra pritja lexohet si ecuri dhe jo si ngecje. */
-.tour-bar {
-  width: min(280px, 60vw);
-  height: 2px;
-  background: rgba(244, 241, 234, 0.14);
-  overflow: hidden;
-  border-radius: 2px;
-}
-.tour-bar-fill {
-  display: block;
+  inset: 0;
+  width: 100%;
   height: 100%;
-  background: var(--brand-gold);
-  transition: width 0.12s linear;
+  /* Nisja nga maja, jo nga e djathta. */
+  transform: rotate(-90deg);
+}
+.tour-ring circle {
+  fill: none;
+  stroke-width: 4;
+}
+.tour-ring-track {
+  stroke: rgba(244, 241, 234, 0.12);
+}
+.tour-ring-fill {
+  stroke: var(--brand-gold);
+  stroke-linecap: round;
+  /* Sa gjatë zgjat një hap i shiritit; e barabartë me intervalin që e
+     përditëson, ndaj lëvizja del e vazhdueshme e jo me kërcime. */
+  transition: stroke-dashoffset 0.12s linear;
+}
+.tour-ring-num {
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--brand-gold);
+  font-variant-numeric: tabular-nums;
 }
 
 .tour-beat {
